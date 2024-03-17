@@ -29,7 +29,6 @@ public final class RelationsRequest {
                     serverWeight += futureResult.getO2();
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
-                    throw new RuntimeException(e);
                 }
             }
             futures.clear();

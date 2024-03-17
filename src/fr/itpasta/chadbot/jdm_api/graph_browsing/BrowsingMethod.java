@@ -9,17 +9,20 @@ import java.util.List;
 import static fr.itpasta.chadbot.Main.api;
 
 public enum BrowsingMethod {
-    HAS_CAPACITY_BECAUSE_OWN1(RelationType.R_OWN, RelationType.R_INSTR_1, RelationType.R_AGENT_1),
+	HAS_CAPACITY_BECAUSE_OWN1(RelationType.R_OWN, RelationType.R_INSTR_1, RelationType.R_AGENT_1),
     HAS_CAPACITY_BECAUSE_OWN2(RelationType.R_HAS_PART, RelationType.R_INSTR_1, RelationType.R_AGENT_1),
-    DEDUCTION(RelationType.R_ISA, RelationType.R_ANY, RelationType.R_ANY),
-    SYNONYM(RelationType.R_SYN, RelationType.R_ANY, RelationType.R_ANY),
-    INDUCTION(RelationType.R_HYPO, RelationType.R_ANY, RelationType.R_ANY),
 
+	DEDUCTION(RelationType.R_ISA, RelationType.R_ANY, RelationType.R_ANY),
+    SYNONYM(RelationType.R_SYN, RelationType.R_ANY, RelationType.R_ANY),
+    DIRECT(null, null, null),
+    INDUCTION(RelationType.R_HYPO, RelationType.R_ANY, RelationType.R_ANY),
+    
     OWN_BECAUSE_HAS_CAPACITY1(RelationType.R_AGENT_1, RelationType.R_INSTR, RelationType.R_OWN),
     OWN_BECAUSE_HAS_CAPACITY2(RelationType.R_AGENT_1, RelationType.R_INSTR, RelationType.R_HAS_PART);
 
+	private final static int DEFAULT_N_THREAD = 15;
     private final static int DEFAULT_MINIMAL_WEIGHT = 10;
-    private final static int DEFAULT_MAX_COUNT = 20;
+    private final static int DEFAULT_MAX_COUNT = 15;
     private final static boolean DEFAULT_DEEP = false;
     private final RelationType R1;
     private final RelationType R2;
@@ -43,13 +46,12 @@ public enum BrowsingMethod {
     }
 
     public static Proof applyAll(LexicalGraph lexicalGraph, String word2, RelationType relationType) {
-        Proof proof;
-        if ((proof = checkDirectRelation(lexicalGraph, word2, relationType)).getValidity() != Validity.UNKNOWN) return proof;
+        Proof proof = new Proof();
         BrowsingMethod[] browsingMethods = BrowsingMethod.values();
         int i = 0;
         while (proof.getValidity() == Validity.UNKNOWN && i < browsingMethods.length) {
-            proof = browsingMethods[i].apply(lexicalGraph, word2, relationType);
-            i++;
+	         proof = browsingMethods[i].apply(lexicalGraph, word2, relationType);
+	         i++;
         }
         return proof;
     }
@@ -59,8 +61,12 @@ public enum BrowsingMethod {
     }
 
     public Proof apply(LexicalGraph lexicalGraph, String word2, RelationType relationType) {
-        assert R2 == RelationType.R_ANY || relationType == R2;
+        assert R2 == RelationType.R_ANY || relationType == R2 || (R1 == null && R2 == null && R3 == null);
         assert relationType != RelationType.R_ANY;
+        System.out.println(R1 + " " + R2 + " " + R3);
+        if (R1 == null && R2 == null && R3 == null) {
+        	return checkDirectRelation(lexicalGraph, word2, relationType);
+        }
         return generateProof(lexicalGraph, word2, R1, relationType, R3, this);
     }
 
@@ -73,7 +79,9 @@ public enum BrowsingMethod {
             String word2,
             RelationType relationType
     ) {
+    	System.out.println(lexicalGraph);
         Relation relation = lexicalGraph.getPreciseRelation(relationType, word2, RelationDirection.OUTGOING);
+        System.out.println(relation);
         if (relation != null) {
             return new Proof(Proof.makeExplanation(
                     lexicalGraph.getMainWord(),
@@ -88,7 +96,8 @@ public enum BrowsingMethod {
     }
 
 
-    private static Proof generateProof(
+    @SuppressWarnings("unused")
+	private static Proof generateProof(
             LexicalGraph lexicalGraph,
             String word2,
             RelationType R1,
@@ -102,7 +111,8 @@ public enum BrowsingMethod {
         RelationDirection relationDirection = R1 == RelationType.R_HYPO ? RelationDirection.INCOMING : RelationDirection.OUTGOING;
         R1 = R1 == RelationType.R_HYPO ? RelationType.R_ISA : R1;
         R3 = R3 == RelationType.R_ANY ? R2 : R3;
-        Relation relation = lexicalGraph.getPreciseRelation(R2, word2, relationDirection);
+        //Relation relation = lexicalGraph.getPreciseRelation(R2, word2, relationDirection);
+        Relation relation = null;
         if (relation != null) {
             return new Proof(Proof.makeExplanation(
                     lexicalGraph.getMainWord(),
@@ -145,7 +155,7 @@ public enum BrowsingMethod {
                     for (Node node : deepNode2isa) {
                         nodes2isaNames.add(node.getName());
                     }
-                    List<LexicalGraph> deepGraphs2 = new ArrayList<>(RelationsRequest.ask(20, deepNodes2isaNames));
+                    List<LexicalGraph> deepGraphs2 = new ArrayList<>(RelationsRequest.ask(DEFAULT_N_THREAD, deepNodes2isaNames));
                     for (LexicalGraph deepGraph2 : deepGraphs2) {
                         Relation deepRelation2 = deepGraph2.getPreciseRelation(R2, word2, relationDirection);
                         if (deepRelation2 != null) {

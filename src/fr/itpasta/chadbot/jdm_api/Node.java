@@ -62,6 +62,6 @@ public class Node implements Serializable {
 
     @Override
     public String toString() {
-        return getName();
+        return "{" + Integer.toString(eid) + ", " + name + "}";
     }
 }

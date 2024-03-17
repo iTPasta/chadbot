@@ -83,7 +83,7 @@ public class ChadBotListener extends DiscordBotListener {
                     try {
                         proof = BrowsingMethod.applyAll(word1, word2, relationType);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        e.printStackTrace();
                     }
                     String messageToSend;
                     if (proof.getValidity() == Validity.VALID) {

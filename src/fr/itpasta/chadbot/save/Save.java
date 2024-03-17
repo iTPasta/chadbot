@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public class Save {
+	private final long MINIMAL_FILE_SIZE = 1000;
+	
     private SaveDirectory saveDirectory;
     private PatternsFile patternsFile;
     private Map<Pattern, RelationType> patterns;
@@ -128,8 +130,14 @@ public class Save {
 
     private File getFile(String fileName) {
         for (File file : saveDirectory.getFiles()) {
+        	// System.out.println("\"" + file.getName() + "\".equals(\"" + fileName + "\") ? " + file.getName().equals(fileName));
             if (file.getName().equals(fileName)) {
-                return file;
+            	if (file.length() > MINIMAL_FILE_SIZE) {
+            		return file;
+            	} else {
+            		file.delete();
+                	return null;
+            	}
             }
         }
         return null;
@@ -138,10 +146,15 @@ public class Save {
     public LexicalGraph getLexicalGraph(String word) {
         LexicalGraph lexicalGraph = null;
         File file = getFile(word + ".dat");
+        
+        if (file == null) {
+        	file = getFile(word.replace('é', '?').replace('è', '?').replace('ê', '?') + ".dat");
+        }
 
         if (file != null && file.exists()) {
-            try (FileInputStream fileInputStream = new FileInputStream(file);
-                 ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
+            try {
+            	FileInputStream fileInputStream = new FileInputStream(file);
+            	ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
                 Object object = objectInputStream.readObject();
 
                 if (object instanceof LexicalGraph) {

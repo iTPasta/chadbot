@@ -13,12 +13,26 @@ public class ObjectSaveFile extends File {
         super(saveDirectory.getPath() + "/" + fileName);
         this.saveDirectory = saveDirectory;
     }
+    
+    /*public boolean exists() {
+    	if (!super.exists()) {
+    		try {
+    			super.createNewFile();
+    			super.delete();
+    			return false;
+    		} catch (IOException e) {
+    			return true;
+    		}
+    	} else {
+    		return true;
+    	}
+    }*/
 
     public boolean create() throws IOException {
         if (!exists()) {
             return createNewFile();
         } else {
-            throw new IOException("Le fichier existe déjà.");
+            throw new IOException("Le fichier '" + getName() + "' existe déjà.");
         }
     }
 
